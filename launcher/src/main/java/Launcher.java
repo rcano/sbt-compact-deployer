@@ -1,5 +1,6 @@
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.jar.Attributes;
@@ -10,7 +11,10 @@ public class Launcher {
   public static void main(String[] args) throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
     System.out.println("Unpacking application...");
     long start = System.nanoTime();
-    PackedAppClassLoader packedApp = new PackedAppClassLoader(Launcher.class.getResourceAsStream("/app"));
+    DataInputStream dis = new DataInputStream(Launcher.class.getResourceAsStream("/app.size"));
+    long appSize = dis.readLong();
+    dis.close();
+    PackedAppClassLoader packedApp = new PackedAppClassLoader(Launcher.class.getResourceAsStream("/app"), appSize);
     long total = System.nanoTime() - start;
     System.out.printf("Unpacking+indexing took %.2fs\n", total / 1e9);
     

@@ -1,6 +1,7 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,19 +24,17 @@ import java.util.jar.Pack200.Unpacker;
 
 public class PackedAppClassLoader extends ClassLoader {
 
-  public final byte[] unpackedApp;
   public final Map<String, byte[]> index = new HashMap<String, byte[]>();
 
-  public PackedAppClassLoader(InputStream pack) throws IOException {
+  public PackedAppClassLoader(InputStream pack, long unpackedSize) throws IOException {
     Unpacker unpacker = Pack200.newUnpacker();
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(3000 * 1024);
+    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream((int) unpackedSize);
     unpacker.unpack(pack, new JarOutputStream(byteArrayOutputStream));
     System.out.println("Unpacking done");
-    unpackedApp = byteArrayOutputStream.toByteArray();
-    index();
+    index(byteArrayOutputStream.toByteArray());
   }
 
-  private void index() throws IOException {
+  private void index(byte[] unpackedApp) throws IOException {
     System.out.println("Indexing");
     JarInputStream input = new JarInputStream(new ByteArrayInputStream(unpackedApp));
     Manifest manifest = input.getManifest();
@@ -45,11 +44,18 @@ public class PackedAppClassLoader extends ClassLoader {
       index.put("META-INF/MANIFEST.MF", baos.toByteArray());
     }
     JarEntry jarEntry;
+    DataInputStream dis = new DataInputStream(input);
     byte[] readingBuffer = new byte[1024 * 4];
     while ((jarEntry = input.getNextJarEntry()) != null) {
       if (!jarEntry.isDirectory()) {
-        jarEntry.getSize();
-        byte[] c = readFully(input, readingBuffer);
+        long jarEntrySize = jarEntry.getSize();
+        byte[] c;
+        if (jarEntrySize == -1) {
+          c = readFully(dis, readingBuffer);
+        } else {
+          c = new byte[(int) jarEntry.getSize()];
+          dis.readFully(c);
+        }
         index.put(jarEntry.getName(), c);
       }
     }
@@ -69,11 +75,14 @@ public class PackedAppClassLoader extends ClassLoader {
 
   @Override
   protected Class<?> findClass(String name) throws ClassNotFoundException {
-    byte[] entry = index.get(name.replace('.', '/') + ".class");
+    String className = name.replace('.', '/') + ".class";
+    byte[] entry = index.get(className);
     if (entry == null) {
       System.err.println("Class not found " + name);
       throw new ClassNotFoundException();
     }
+    //once a class is defined, we no longer need to store its bytecode, so allow it to be GCd
+    index.remove(className);
     return defineClass(name, entry, 0, entry.length, protectionDomain);
   }
 
