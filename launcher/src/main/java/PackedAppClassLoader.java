@@ -17,14 +17,14 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 import java.util.jar.Pack200;
 import java.util.jar.Pack200.Unpacker;
-import java.util.zip.GZIPInputStream;
 
 public class PackedAppClassLoader extends ClassLoader {
 
-  private final byte[] unpackedApp;
-  private final Map<String, byte[]> index = new HashMap<String, byte[]>();
+  public final byte[] unpackedApp;
+  public final Map<String, byte[]> index = new HashMap<String, byte[]>();
 
   public PackedAppClassLoader(InputStream pack) throws IOException {
     Unpacker unpacker = Pack200.newUnpacker();
@@ -38,6 +38,12 @@ public class PackedAppClassLoader extends ClassLoader {
   private void index() throws IOException {
     System.out.println("Indexing");
     JarInputStream input = new JarInputStream(new ByteArrayInputStream(unpackedApp));
+    Manifest manifest = input.getManifest();
+    if (manifest != null) {
+      ByteArrayOutputStream baos = new ByteArrayOutputStream();
+      manifest.write(baos);
+      index.put("META-INF/MANIFEST.MF", baos.toByteArray());
+    }
     JarEntry jarEntry;
     byte[] readingBuffer = new byte[1024 * 4];
     while ((jarEntry = input.getNextJarEntry()) != null) {
@@ -71,10 +77,6 @@ public class PackedAppClassLoader extends ClassLoader {
     return defineClass(name, entry, 0, entry.length, protectionDomain);
   }
 
-  public byte[] getEntry(String entry) {
-    return index.get(entry);
-  }
-  
   private java.net.URL toURL(String name, final byte[] bytes) {
     try {
       return new java.net.URL("packedpool", "localhost", -1, name, new URLStreamHandler() {
