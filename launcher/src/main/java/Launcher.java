@@ -8,8 +8,12 @@ import java.util.jar.Manifest;
 public class Launcher {
 
   public static void main(String[] args) throws IOException, NoSuchMethodException, InvocationTargetException, IllegalAccessException, ClassNotFoundException {
+    System.out.println("Unpacking application...");
+    long start = System.nanoTime();
     PackedAppClassLoader packedApp = new PackedAppClassLoader(Launcher.class.getResourceAsStream("/app"));
-
+    long total = System.nanoTime() - start;
+    System.out.printf("Unpacking+indexing took %.2fs\n", total / 1e9);
+    
     if (Boolean.getBoolean("launcherDumpIndex")) {
       packedApp.index.forEach((key, value) -> System.out.println(key));
     }
