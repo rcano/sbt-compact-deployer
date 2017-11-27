@@ -48,6 +48,10 @@ object DeployerPlugin extends AutoPlugin {
         appEntry.setMethod(java.util.zip.ZipEntry.DEFLATED)
         jarOut putNextEntry appEntry
         IO.transferAndClose(new FileInputStream(packedFile), jarOut)
+        
+        jarOut putNextEntry new JarEntry("app.size")
+        new java.io.DataOutputStream(jarOut).writeLong(proguarded.length)
+        
         jarOut.finish()
       }
       
