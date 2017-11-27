@@ -24,7 +24,7 @@ object DeployerPlugin extends AutoPlugin {
         Pack200.Packer.SEGMENT_LIMIT -> "-1",
         Pack200.Packer.KEEP_FILE_ORDER -> "false")
       
-      val packedFile = proguarded.getParentFile / "app.pack.gz"
+      val packedFile = proguarded.getParentFile / "app.pack"
       
       io.Using.jarFile(false)(proguarded)(jarFile => 
         io.Using.fileOutputStream(false)(packedFile)(out => packer.pack(jarFile, out)))
