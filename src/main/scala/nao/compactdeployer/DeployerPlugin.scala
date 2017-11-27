@@ -14,6 +14,7 @@ object DeployerPlugin extends AutoPlugin {
   }
   import autoImport._, SbtProguard.autoImport._
   override lazy val projectSettings = Seq(
+    exportJars := true,
     compactDeploy := Def.task {
       val proguarded = (proguard in Proguard).value.head
       
