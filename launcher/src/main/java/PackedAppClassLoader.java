@@ -26,7 +26,8 @@ public class PackedAppClassLoader extends ClassLoader {
 
   public final Map<String, byte[]> index = new HashMap<String, byte[]>();
 
-  public PackedAppClassLoader(InputStream pack, long unpackedSize) throws IOException {
+  public PackedAppClassLoader(ClassLoader parent, InputStream pack, long unpackedSize) throws IOException {
+    super(parent);
     Unpacker unpacker = Pack200.newUnpacker();
     ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream((int) unpackedSize);
     unpacker.unpack(pack, new JarOutputStream(byteArrayOutputStream));

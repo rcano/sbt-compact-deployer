@@ -14,7 +14,9 @@ public class Launcher {
     DataInputStream dis = new DataInputStream(Launcher.class.getResourceAsStream("/app.size"));
     long appSize = dis.readLong();
     dis.close();
-    PackedAppClassLoader packedApp = new PackedAppClassLoader(Launcher.class.getResourceAsStream("/app"), appSize);
+    PackedAppClassLoader packedApp = new PackedAppClassLoader(Thread.currentThread().getContextClassLoader(),
+      Launcher.class.getResourceAsStream("/app"), appSize);
+    Thread.currentThread().setContextClassLoader(packedApp);
     long total = System.nanoTime() - start;
     System.out.printf("Unpacking+indexing took %.2fs\n", total / 1e9);
     
