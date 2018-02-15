@@ -55,7 +55,9 @@ object DeployerPlugin extends AutoPlugin {
         new java.io.DataOutputStream(jarOut).writeLong(proguarded.length)
         
         for ((file, path) <- extraMappings) {
-          jarOut putNextEntry new JarEntry(path)
+          val mappingEntry = new JarEntry(path)
+          mappingEntry.setMethod(java.util.zip.ZipEntry.DEFLATED)
+          jarOut putNextEntry mappingEntry
           IO.transferAndClose(new FileInputStream(file), jarOut)
         }
         
