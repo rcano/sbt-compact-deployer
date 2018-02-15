@@ -15,7 +15,9 @@ object DeployerPlugin extends AutoPlugin {
   import autoImport._, SbtProguard.autoImport._
   override lazy val projectSettings = Seq(
     exportJars := true,
-    compactDeploy := Def.task {
+    mappings in compactDeploy := Seq(),
+    compactDeploy := {
+      val extraMappings = (mappings in compactDeploy).value
       val proguarded = (proguard in Proguard).value.head
       
       val packer = Pack200.newPacker()
@@ -52,10 +54,15 @@ object DeployerPlugin extends AutoPlugin {
         jarOut putNextEntry new JarEntry("app.size")
         new java.io.DataOutputStream(jarOut).writeLong(proguarded.length)
         
+        for ((file, path) <- extraMappings) {
+          jarOut putNextEntry new JarEntry(path)
+          IO.transferAndClose(new FileInputStream(file), jarOut)
+        }
+        
         jarOut.finish()
       }
       
       Seq(packedFile, compactedJar)
-    }.value
+    }
   )
 }
